@@ -8,4 +8,4 @@ Promise.promisifyAll(fs);
 which.async = Promise.promisify(which);
 Promise.promisifyAll(child_process);
 
-export const rootDir = path.join(__dirname, "../..");
+export const rootDir = path.join(__dirname, "..");

@@ -5,7 +5,7 @@ import path from "path";
 import fs from "fs-extra";
 import {csmithDependencies, fastCompDependencies} from "./dependencies";
 import {execFileAsync, spawn} from "child_process";
-const outputDirectory = path.join(rootDir, "output");
+const outputDirectory = path.join(rootDir, "tools");
 
 function waitUntilDone(proc) {
   return new Promise((resolve, reject) => {

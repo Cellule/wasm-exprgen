@@ -24,7 +24,6 @@ For more details on how to build Emscripten from source refer to [Emscripten Too
 git submodule update --init
 
 # Install required modules for build scripts
-cd scripts
 npm install --production
 npm run setup # You might have to deal with symlink permissons
 ```
@@ -32,6 +31,5 @@ npm run setup # You might have to deal with symlink permissons
 ## Building
 
 ```bash
-cd scripts
 npm run build-tools
 ```
