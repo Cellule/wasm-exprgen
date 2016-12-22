@@ -28,8 +28,19 @@ npm install --production
 npm run setup # You might have to deal with symlink permissons
 ```
 
-## Building
+## Building tools
 
 ```bash
 npm run build-tools
 ```
+
+## Usage
+
+The following command will run csmith to generate a .c file then it runs emscripten to compile and generate WebAssembly from it.
+It is possible for csmith to generate code that is not supported by llvm.
+
+```bash
+npm run gen
+```
+
+At this point, if it successfully built in llvm, there should be a a series of `test.*` files in the `output` directory.
