@@ -1,8 +1,8 @@
 import {checkSubmodules} from "./git";
-import {rootDir, buildDirectory, binDirectory} from "./init";
+import {rootDir, buildDirectory, binDirectory, outputDir} from "./init";
 import path from "path";
 import fs from "fs-extra";
-import {csmithDependencies, llvmDependencies} from "./dependencies";
+import {csmithDependencies, llvmDependencies, emscriptenDependencies} from "./dependencies";
 import {execFileAsync, spawn} from "child_process";
 import {waitUntilDone} from "./utils";
 
@@ -84,6 +84,23 @@ async function buildLLVM() {
   console.log(`LLVM output: ${binDirectory.llvm}`);
 }
 
+async function prepareEmscriptenConfig() {
+  const {python} = await emscriptenDependencies();
+  const cleanPath = p => p.replace(/\\/g, "/");
+  const file = `
+EMSCRIPTEN_ROOT = '${cleanPath(path.join(rootDir, "third_party/emscripten"))}'
+LLVM_ROOT= '${cleanPath(binDirectory.llvm)}'
+PYTHON = '${cleanPath(python)}'
+NODE_JS= '${cleanPath(process.argv[0])}'
+TEMP_DIR = '${cleanPath(process.env.tmp)}'
+COMPILER_ENGINE = NODE_JS
+JS_ENGINES = [NODE_JS]
+`;
+  const emscriptenFile = path.join(outputDir, ".emscripten");
+  await fs.outputFileAsync(emscriptenFile, file);
+  console.log(`Generated config file ${emscriptenFile}`);
+}
+
 checkSubmodules()
-  .then(() => Promise.all([buildCSmith(), buildLLVM()]))
+  .then(() => Promise.all([buildCSmith(), buildLLVM(), prepareEmscriptenConfig()]))
   .catch(err => console.error(err));

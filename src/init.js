@@ -21,3 +21,4 @@ export const binDirectory = {
   csmith: buildDirectory.csmith,
   llvm: path.join(buildDirectory.llvm, isWindows ? "Release/bin" : "bin")
 };
+export const outputDir = path.join(rootDir, "output");

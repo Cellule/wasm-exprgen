@@ -1,4 +1,4 @@
-import {rootDir, binDirectory, isWindows} from "./init";
+import {rootDir, binDirectory, outputDir, isWindows} from "./init";
 import path from "path";
 import {spawn} from "child_process";
 import {waitUntilDone} from "./utils";
@@ -119,6 +119,12 @@ export async function emscriptenDependencies() {
   const runFn = bin => (args = [], opt = {}) => {
     const proc = spawn(python, [bin, ...args], {
       stdio: "inherit",
+      env: {
+        ...process.env,
+        // Change home to tell emscripten to use our .emscripten file
+        HOME: outputDir,
+        USERPROFILE: outputDir,
+      },
       ...opt
     });
     return waitUntilDone(proc);
