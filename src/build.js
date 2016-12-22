@@ -1,5 +1,5 @@
-import {checkSubmodules, buildDirectory, binDirectory} from "./git";
-import {rootDir} from "./init";
+import {checkSubmodules} from "./git";
+import {rootDir, buildDirectory, binDirectory} from "./init";
 import path from "path";
 import fs from "fs-extra";
 import {csmithDependencies, llvmDependencies} from "./dependencies";
@@ -96,6 +96,5 @@ async function buildLLVM() {
 }
 
 checkSubmodules()
-  .then(buildCSmith)
-  .then(buildLLVM)
+  .then(() => Promise.all([buildCSmith(), buildLLVM()]))
   .catch(err => console.error(err));
