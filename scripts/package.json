@@ -1,0 +1,22 @@
+{
+  "name": "wasm-exprgen-scripts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel src --out-dir lib",
+    "init": "node -r babel-polyfill lib/link.js"
+  },
+  "author": "Michael Ferris <mike.ferris@hotmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "babel-polyfill": "^6.20.0",
+    "bluebird": "^3.4.6",
+    "fs-extra": "^1.0.0",
+    "nodegit": "^0.16.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-preset-latest": "^6.16.0"
+  }
+}
