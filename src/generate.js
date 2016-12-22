@@ -19,7 +19,6 @@ async function main() {
     cwd: outputDir
   });
   */
-
 }
 
 main().catch(console.error);

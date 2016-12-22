@@ -1,0 +1,9 @@
+{
+  "extends": [
+    "cellule/global.js",
+    "cellule/node.js",
+    "cellule/codestyle.js",
+    "cellule/es2015.js",
+    "cellule/babel.js"
+  ]
+}

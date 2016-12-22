@@ -1,6 +1,5 @@
-import os from "os";
 import {checkSubmodules, buildDirectory, binDirectory} from "./git";
-import {rootDir, toolsDirectory} from "./init";
+import {rootDir} from "./init";
 import path from "path";
 import fs from "fs-extra";
 import {csmithDependencies, llvmDependencies} from "./dependencies";

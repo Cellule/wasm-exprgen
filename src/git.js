@@ -11,7 +11,7 @@ export async function checkSubmodules() {
     "emscripten",
     "emscripten-fastcomp",
   ];
-  for(const name of submodules) {
+  for (const name of submodules) {
     const status = await Submodule.status(repo, name, Submodule.IGNORE.NONE);
     if (status & Submodule.STATUS.WD_UNINITIALIZED) {
       console.log(`Initializing ${name}`);
@@ -29,8 +29,8 @@ export async function checkSubmodules() {
   let isSymlinked = false;
   try {
     const toolClangPath = await fs.realpathAsync(symlink);
-    isSymlinked = clangPath == toolClangPath;
-  } catch(e) {
+    isSymlinked = clangPath === toolClangPath;
+  } catch (e) {
     if (e.code !== "ENOENT") {
       throw e;
     }

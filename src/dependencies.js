@@ -3,7 +3,6 @@ import path from "path";
 import fs from "fs-extra";
 import which from "which";
 
-
 async function fromPath(bin) {
   try {
     const rPath = await which.async(bin);
@@ -38,7 +37,7 @@ async function searchForMsBuild() {
     msbuildCache = p;
     console.log(`MsBuild path: ${p}`);
     return msbuildCache;
-  }
+  };
   const rPath = await fromPath("msbuild.exe");
   if (rPath) {
     // use the one on path
@@ -47,7 +46,7 @@ async function searchForMsBuild() {
   const versions = ["14.0", "12.0", "10.0"];
   for (const version of versions) {
     const paths = [
-      path.resolve(process.env["ProgramFiles"], "msbuild", version, "bin/x86"),
+      path.resolve(process.env.ProgramFiles, "msbuild", version, "bin/x86"),
       path.resolve(process.env["ProgramFiles(x86)"], "msbuild", version, "bin"),
       path.resolve(process.env["ProgramFiles(x86)"], "msbuild", version, "bin/amd64"),
     ];
