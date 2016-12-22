@@ -1,12 +1,10 @@
-import {rootDir} from "./init";
-import os from "os";
+import {rootDir, binDirectory, isWindows} from "./init";
 import path from "path";
 import fs from "fs-extra";
 import which from "which";
 
-const isWindows = os.platform() === "win32";
 
-async function checkBinary(bin) {
+async function fromPath(bin) {
   try {
     const rPath = await which.async(bin);
     return rPath;
@@ -41,7 +39,7 @@ async function searchForMsBuild() {
     console.log(`MsBuild path: ${p}`);
     return msbuildCache;
   }
-  const rPath = await checkBinary("msbuild.exe");
+  const rPath = await fromPath("msbuild.exe");
   if (rPath) {
     // use the one on path
     return cache(rPath);
@@ -75,11 +73,34 @@ export async function csmithDependencies() {
   return dependencies;
 }
 
-export async function fastCompDependencies() {
+export async function llvmDependencies() {
   const dependencies = {
     cmake: await which.async("cmake"),
     msbuild: await searchForMsBuild(),
     make: isWindows ? null : await which.async("make"),
   };
   return dependencies;
+}
+
+export async function generateDependencies() {
+  const csmithName = isWindows ? "csmith.exe" : "csmith";
+  const csmithExe = await fromPath(csmithName) || path.join(binDirectory.csmith, csmithName);
+  try {
+    await fs.statAsync(csmithExe);
+  } catch (e) {
+    console.log(`Unable to find ${csmithExe}. Make sure it is built, run "npm run build-tools"`);
+    return;
+  }
+  const clangName = isWindows ? "clang.exe" : "clang";
+  const clangExe = await fromPath(clangName) || path.join(binDirectory.llvm, clangName);
+  try {
+    await fs.statAsync(clangExe);
+  } catch (e) {
+    console.log(`Unable to find ${clangExe}. Make sure it is built, run "npm run build-tools"`);
+    return;
+  }
+
+  return {
+    csmith: csmithExe
+  };
 }
