@@ -1,6 +1,7 @@
 import {rootDir, binDirectory, isWindows} from "./init";
 import path from "path";
-import fs from "fs-extra";
+import {spawn} from "child_process";
+import {waitUntilDone} from "./utils";
 import which from "which";
 
 async function fromPath(bin, opt = {}) {
@@ -62,10 +63,72 @@ export async function llvmDependencies() {
   return dependencies;
 }
 
+async function validatePythonVersion(python) {
+  if (python) {
+    try {
+      const proc = spawn(python, ["--version"]);
+      let stdout = "";
+      proc.stdout.on("data", data => {stdout += data;});
+      proc.stderr.on("data", data => {stdout += data;});
+      await waitUntilDone(proc);
+      try {
+        const version = parseFloat(/python (\d+\.\d+)/ig.exec(stdout)[1]);
+        if (version >= 2.7 && version < 3) {
+          return python;
+        }
+      } catch (e) {
+        // ignore
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  return null;
+}
+let pythonCache;
+async function searchPython() {
+  if (pythonCache) {
+    return pythonCache;
+  }
+
+  const locations = [
+    undefined, // Use current path
+    process.env.PYTHON,
+  ];
+  if (isWindows) {
+    locations.push("C:\\Python27");
+  }
+  for (const loc of locations) {
+    for (const bin of ["python", "python2"]) {
+      const python = await validatePythonVersion(await fromPath(bin, {path: loc}));
+      if (python) {
+        pythonCache = python;
+        console.log(`Python path: ${python}`);
+        return python;
+      }
+    }
+  }
+  throw new Error("Python 2 is missing");
+}
+
 export async function emscriptenDependencies() {
-  const python = await fromPath("python");
+  const python = await searchPython();
+  const emscriptenRoot = path.join(rootDir, "third_party", "emscripten");
+  const emcc = path.join(emscriptenRoot, "emcc.py");
+  const empp = path.join(emscriptenRoot, "em++.py");
+  const runFn = bin => (args = [], opt = {}) => {
+    const proc = spawn(python, [bin, ...args], {
+      stdio: "inherit",
+      ...opt
+    });
+    return waitUntilDone(proc);
+  };
   return {
-    python
+    python,
+    emcc,
+    empp,
+    runEmcc: runFn(emcc),
+    runEmpp: runFn(empp)
   };
 }
 
