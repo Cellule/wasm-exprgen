@@ -1,9 +1,7 @@
-import "./init";
+import {rootDir} from "./init";
 import {Repository, Submodule} from "nodegit";
 import path from "path";
 import fs from "fs-extra";
-
-const rootDir = path.join(__dirname, "../..");
 
 export async function checkSubmodules() {
   const repo = await Repository.open(rootDir);

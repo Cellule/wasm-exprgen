@@ -1,4 +1,4 @@
-import {checkCSmithDependencies} from "./dependencies";
+import {checkSubmodules} from "./git";
 
-
-checkCSmithDependencies().catch(err => console.error(err))
+checkSubmodules()
+  .catch(err => console.error(err))
