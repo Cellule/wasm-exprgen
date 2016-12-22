@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "babel src --out-dir lib",
-    "init": "node -r babel-polyfill lib/link.js"
+    "setup": "node -r babel-polyfill lib/setup.js",
+    "build-tools": "node -r babel-polyfill lib/build.js"
   },
   "author": "Michael Ferris <mike.ferris@hotmail.com>",
   "license": "MIT",
