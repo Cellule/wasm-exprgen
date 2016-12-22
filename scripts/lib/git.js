@@ -14,7 +14,7 @@ var checkSubmodules = exports.checkSubmodules = function () {
         switch (_context.prev = _context.next) {
           case 0:
             _context.next = 2;
-            return _nodegit.Repository.open(rootDir);
+            return _nodegit.Repository.open(_init.rootDir);
 
           case 2:
             repo = _context.sent;
@@ -104,8 +104,8 @@ var checkSubmodules = exports.checkSubmodules = function () {
 
           case 44:
             clang = _context.sent;
-            fastCompPath = _path2.default.join(rootDir, fastcomp.path());
-            clangPath = _path2.default.join(rootDir, clang.path());
+            fastCompPath = _path2.default.join(_init.rootDir, fastcomp.path());
+            clangPath = _path2.default.join(_init.rootDir, clang.path());
             symlink = _path2.default.join(fastCompPath, "tools/clang");
             isSymlinked = false;
             _context.prev = 49;
@@ -174,7 +174,7 @@ var checkSubmodules = exports.checkSubmodules = function () {
   };
 }();
 
-require("./init");
+var _init = require("./init");
 
 var _nodegit = require("nodegit");
 
@@ -189,5 +189,3 @@ var _fsExtra2 = _interopRequireDefault(_fsExtra);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-
-var rootDir = _path2.default.join(__dirname, "../..");

@@ -1,4 +1,4 @@
-import "./init";
+import {rootDir} from "./init";
 import os from "os";
 import path from "path";
 import fs from "fs-extra";
@@ -28,14 +28,23 @@ async function fileExists(p) {
   return false;
 }
 
+let msbuildCache;
 async function searchForMsBuild() {
   if (!isWindows) {
-    throw new Error("MsBuild is only used on Windows");
+    return null;
+  }
+  if (msbuildCache) {
+    return msbuildCache;
+  }
+  const cache = p => {
+    msbuildCache = p;
+    console.log(`MsBuild path: ${p}`);
+    return msbuildCache;
   }
   const rPath = await checkBinary("msbuild.exe");
   if (rPath) {
     // use the one on path
-    return rPath;
+    return cache(rPath);
   }
   const versions = ["14.0", "12.0", "10.0"];
   for (const version of versions) {
@@ -47,24 +56,30 @@ async function searchForMsBuild() {
     for (const p of paths) {
       const msbuildPath = path.join(p, "msbuild.exe");
       if (await fileExists(msbuildPath)) {
-        return msbuildPath;
+        return cache(msbuildPath);
       }
     }
   }
-  return null;
+  throw new Error("MsBuild is missing");
 }
 
-export async function checkCSmithDependencies() {
-  const dependencies = {};
+export async function csmithDependencies() {
+  const dependencies = {
+    msbuild: await searchForMsBuild()
+  };
   if (isWindows) {
-    // Search for msbuild
-    const msbuild = await searchForMsBuild();
-    if (!msbuild) {
-      throw new Error("MsBuild is missing");
-    }
-    console.log(`MsBuild path: ${msbuild}`);
-    dependencies.msbuild = msbuild;
+    dependencies.m4 = path.join(rootDir, "third_party", "m4.exe");
+  } else {
+    dependencies.m4 = await which.async("m4");
   }
   return dependencies;
 }
 
+export async function fastCompDependencies() {
+  const dependencies = {
+    cmake: await which.async("cmake"),
+    msbuild: await searchForMsBuild(),
+    make: isWindows ? null : await which.async("make"),
+  };
+  return dependencies;
+}
