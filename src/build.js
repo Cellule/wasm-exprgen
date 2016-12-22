@@ -7,42 +7,55 @@ import {execFileAsync, spawn} from "child_process";
 import {waitUntilDone} from "./utils";
 
 async function buildCSmith() {
-  const {msbuild, m4} = await csmithDependencies();
+  const {msbuild, make, m4} = await csmithDependencies();
   const csmithBinDir = buildDirectory.csmith;
+  await fs.ensureDirAsync(csmithBinDir);
   console.log("Starting CSmith build");
 
   const csmithPath = thirdParties.csmith;
+  let output, binSrc;
   if (msbuild) {
     const vcproj = path.join(csmithPath, "src", "csmith.vcxproj");
     await execFileAsync(msbuild, [vcproj, "/p:Configuration=Release"]);
 
-    await fs.ensureDirAsync(csmithBinDir);
-    const output = path.join(csmithBinDir, "csmith.exe");
-    await fs.copyAsync(
-      path.join(csmithPath, "src", "Release", "csmith.exe"),
-      output,
-      {clobber: true}
-    );
+    output = path.join(csmithBinDir, "csmith.exe");
+    binSrc = path.join(csmithPath, "src", "Release", "csmith.exe");
+    // Build m4 files
+    const m4Files = (await fs.readdirAsync(incPath)).filter(file => path.extname(file) === ".m4");
+    for (const m4File of m4Files) {
+      const filename = path.basename(m4File, ".m4");
+      const stream = fs.createWriteStream(path.join(incPath, `${filename}.h`));
+      await (new Promise(r => stream.on("open", r)));
+      const proc = spawn(m4, [path.join(incPath, m4File)], {
+        stdio: [stream, stream, stream]
+      });
+      await waitUntilDone(proc);
+    }
     console.log(`CSmith output: ${output}`);
   } else {
-    throw new Error("Build with make NYI");
+    const procConf = spawn(path.join(csmithPath, "configure"), [], {
+      cwd: csmithPath,
+      stdio: "inherit"
+    });
+    await waitUntilDone(procConf);
+    const procMake = spawn(make, [], {
+      cwd: csmithPath,
+      stdio: "inherit"
+    });
+    await waitUntilDone(procMake);
+    output = path.join(csmithBinDir, "csmith");
+    binSrc = path.join(csmithPath, "src", "csmith");
   }
-
-  // Build m4 files
   const incPath = path.join(csmithBinDir, "inc");
   const incSrcPath = path.join(csmithPath, "runtime");
   await fs.emptyDirAsync(incPath);
   await fs.copyAsync(incSrcPath, incPath);
-  const m4Files = (await fs.readdirAsync(incPath)).filter(file => path.extname(file) === ".m4");
-  for (const m4File of m4Files) {
-    const filename = path.basename(m4File, ".m4");
-    const stream = fs.createWriteStream(path.join(incPath, `${filename}.h`));
-    await (new Promise(r => stream.on("open", r)));
-    const proc = spawn(m4, [path.join(incPath, m4File)], {
-      stdio: [stream, stream, stream]
-    });
-    await waitUntilDone(proc);
-  }
+  await fs.copyAsync(
+    binSrc,
+    output,
+    {clobber: true}
+  );
+  console.log(`CSmith output: ${output}`);
 }
 
 async function buildLLVM() {
@@ -79,7 +92,11 @@ async function buildLLVM() {
     await waitUntilDone(proc);
   } else {
     console.log("Running make");
-    await execFileAsync(make, ["-j4"], {cwd: buildDir});
+    const proc = spawn(make, ["-j4"], {
+      cwd: buildDir,
+      stdio: "inherit"
+    });
+    await waitUntilDone(proc);
   }
   console.log(`LLVM output: ${binDirectory.llvm}`);
 }
@@ -87,20 +104,24 @@ async function buildLLVM() {
 async function prepareEmscriptenConfig() {
   const {python} = await emscriptenDependencies();
   const cleanPath = p => p.replace(/\\/g, "/");
+  const tmpDir = path.join(outputDir, "tmp");
   const file = `
 EMSCRIPTEN_ROOT = '${cleanPath(thirdParties.emscripten)}'
 LLVM_ROOT= '${cleanPath(binDirectory.llvm)}'
 PYTHON = '${cleanPath(python)}'
 NODE_JS= '${cleanPath(process.argv[0])}'
-TEMP_DIR = '${cleanPath(process.env.tmp)}'
+TEMP_DIR = '${cleanPath(tmpDir)}'
 COMPILER_ENGINE = NODE_JS
 JS_ENGINES = [NODE_JS]
 `;
+  await fs.ensureDirAsync(tmpDir);
   const emscriptenFile = path.join(outputDir, ".emscripten");
   await fs.outputFileAsync(emscriptenFile, file);
   console.log(`Generated config file ${emscriptenFile}`);
 }
 
 checkSubmodules()
-  .then(() => Promise.all([buildCSmith(), buildLLVM(), prepareEmscriptenConfig()]))
+  .then(buildCSmith)
+  .then(buildLLVM)
+  .then(prepareEmscriptenConfig)
   .catch(err => console.error(err));

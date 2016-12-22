@@ -44,7 +44,8 @@ async function searchForMsBuild() {
 
 export async function csmithDependencies() {
   const dependencies = {
-    msbuild: await searchForMsBuild()
+    msbuild: await searchForMsBuild(),
+    make: isWindows ? null : await which.async("make"),
   };
   if (isWindows) {
     dependencies.m4 = path.join(thirdParties.m4, "m4.exe");
