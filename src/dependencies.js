@@ -1,4 +1,4 @@
-import {rootDir, binDirectory, outputDir, isWindows} from "./init";
+import {rootDir, binDirectory, outputDir, thirdParties, isWindows} from "./init";
 import path from "path";
 import {spawn} from "child_process";
 import {waitUntilDone} from "./utils";
@@ -47,7 +47,7 @@ export async function csmithDependencies() {
     msbuild: await searchForMsBuild()
   };
   if (isWindows) {
-    dependencies.m4 = path.join(rootDir, "third_party", "m4.exe");
+    dependencies.m4 = path.join(thirdParties.m4, "m4.exe");
   } else {
     dependencies.m4 = await which.async("m4");
   }
@@ -113,7 +113,7 @@ async function searchPython() {
 
 export async function emscriptenDependencies() {
   const python = await searchPython();
-  const emscriptenRoot = path.join(rootDir, "third_party", "emscripten");
+  const emscriptenRoot = thirdParties.emscripten;
   const emcc = path.join(emscriptenRoot, "emcc.py");
   const empp = path.join(emscriptenRoot, "em++.py");
   const runFn = bin => (args = [], opt = {}) => {

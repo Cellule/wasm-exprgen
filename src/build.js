@@ -1,5 +1,5 @@
 import {checkSubmodules} from "./git";
-import {rootDir, buildDirectory, binDirectory, outputDir} from "./init";
+import {rootDir, buildDirectory, binDirectory, outputDir, thirdParties} from "./init";
 import path from "path";
 import fs from "fs-extra";
 import {csmithDependencies, llvmDependencies, emscriptenDependencies} from "./dependencies";
@@ -11,7 +11,7 @@ async function buildCSmith() {
   const csmithBinDir = buildDirectory.csmith;
   console.log("Starting CSmith build");
 
-  const csmithPath = path.join(rootDir, "third_party/csmith");
+  const csmithPath = thirdParties.csmith;
   if (msbuild) {
     const vcproj = path.join(csmithPath, "src", "csmith.vcxproj");
     await execFileAsync(msbuild, [vcproj, "/p:Configuration=Release"]);
@@ -56,7 +56,7 @@ async function buildLLVM() {
   const buildDir = buildDirectory.llvm;
   await fs.ensureDirAsync(buildDir);
 
-  const llvmPath = path.join(rootDir, "third_party/emscripten-fastcomp");
+  const llvmPath = thirdParties.llvm;
   console.log("Running cmake");
   await execFileAsync(cmake, [
     llvmPath,
@@ -88,7 +88,7 @@ async function prepareEmscriptenConfig() {
   const {python} = await emscriptenDependencies();
   const cleanPath = p => p.replace(/\\/g, "/");
   const file = `
-EMSCRIPTEN_ROOT = '${cleanPath(path.join(rootDir, "third_party/emscripten"))}'
+EMSCRIPTEN_ROOT = '${cleanPath(thirdParties.emscripten)}'
 LLVM_ROOT= '${cleanPath(binDirectory.llvm)}'
 PYTHON = '${cleanPath(python)}'
 NODE_JS= '${cleanPath(process.argv[0])}'

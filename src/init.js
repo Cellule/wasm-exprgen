@@ -22,3 +22,11 @@ export const binDirectory = {
   llvm: path.join(buildDirectory.llvm, isWindows ? "Release/bin" : "bin")
 };
 export const outputDir = path.join(rootDir, "output");
+export const thirdPartyRoot = path.join(rootDir, "third_party");
+export const thirdParties = {
+  llvm: path.join(thirdPartyRoot, "emscripten-fastcomp"),
+  emscripten: path.join(thirdPartyRoot, "emscripten"),
+  csmith: path.join(thirdPartyRoot, "csmith"),
+  clang: path.join(thirdPartyRoot, "clang"),
+  m4: thirdPartyRoot
+};
