@@ -4,7 +4,7 @@ import path from "path";
 import {execFileAsync} from "child_process";
 import {generateDependencies, emscriptenDependencies} from "./dependencies";
 
-async function main() {
+export default async function generate() {
   const {csmith} = await generateDependencies();
   const {runEmcc} = await emscriptenDependencies();
 
@@ -26,6 +26,5 @@ async function main() {
     ..."-O3 -s WASM=1 -o test.js".split(" "),
     //"-s", "BINARYEN_METHOD='interpret-binary'",
   ], {cwd: outputDir});
+  return path.resolve(outputDir, "test.js");
 }
-
-main().catch(console.error);

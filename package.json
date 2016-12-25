@@ -2,12 +2,12 @@
   "name": "wasm-exprgen-scripts",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "build": "babel src --out-dir lib",
     "setup": "node -r babel-polyfill lib/setup.js",
     "build-tools": "node -r babel-polyfill lib/build.js",
-    "gen": "node -r babel-polyfill lib/generate.js",
+    "gen": "node -r babel-polyfill lib/cli.js gen",
     "lint": "eslint src"
   },
   "author": "Michael Ferris <mike.ferris@hotmail.com>",
@@ -16,7 +16,8 @@
     "babel-polyfill": "^6.20.0",
     "bluebird": "^3.4.6",
     "fs-extra": "^1.0.0",
-    "which": "^1.2.12"
+    "which": "^1.2.12",
+    "yargs": "^6.5.0"
   },
   "devDependencies": {
     "babel-cli": "^6.18.0",
