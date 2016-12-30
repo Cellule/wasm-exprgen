@@ -26,5 +26,15 @@ export default async function generate() {
     ..."-O3 -s WASM=1 -o test.js".split(" "),
     //"-s", "BINARYEN_METHOD='interpret-binary'",
   ], {cwd: outputDir});
-  return path.resolve(outputDir, "test.js");
+  await runEmcc([
+    "test.c",
+    `-I${path.relative(outputDir, path.join(toolsDirectory, "csmith/inc"))}`,
+    ..."-O3 -s BINARYEN_METHOD='interpret-binary' -o interpret.js".split(" "),
+    //,
+  ], {cwd: outputDir});
+  return {
+    src: path.resolve(outputDir, "test.c"),
+    wasm: path.resolve(outputDir, "test.js"),
+    interpret: path.resolve(outputDir, "interpret.js"),
+  };
 }
