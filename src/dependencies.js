@@ -139,11 +139,25 @@ export async function emscriptenDependencies() {
   };
 }
 
+export async function specInterpreterDependencies() {
+  // todo:: check for ocaml
+  if (isWindows) {
+    return {
+      cmd: "cmd",
+    };
+  }
+  return {
+    make: await which.async("make")
+  };
+}
+
 export async function generateDependencies() {
+  const wasmExe = await fromPath("wasm") || await which.async("wasm", {path: binDirectory.spec});
   const csmithExe = await fromPath("csmith") || await which.async("csmith", {path: binDirectory.csmith});
   const clangExe = await fromPath("clang") || await which.async("clang", {path: binDirectory.llvm});
 
   return {
+    wasm: wasmExe,
     csmith: csmithExe,
     clang: clangExe,
     ...(await emscriptenDependencies())

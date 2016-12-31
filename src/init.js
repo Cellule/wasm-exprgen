@@ -15,10 +15,12 @@ export const rootDir = path.join(__dirname, "..");
 export const toolsDirectory = path.join(rootDir, "tools");
 export const buildDirectory = {
   csmith: path.join(toolsDirectory, "csmith"),
+  spec: path.join(toolsDirectory, "spec"),
   llvm: path.join(toolsDirectory, "llvm")
 };
 export const binDirectory = {
   csmith: buildDirectory.csmith,
+  spec: buildDirectory.spec,
   llvm: path.join(buildDirectory.llvm, isWindows ? "Release/bin" : "bin")
 };
 export const outputDir = path.join(rootDir, "output");
@@ -28,5 +30,6 @@ export const thirdParties = {
   emscripten: path.join(thirdPartyRoot, "emscripten"),
   csmith: path.join(thirdPartyRoot, "csmith"),
   clang: path.join(thirdPartyRoot, "clang"),
+  spec: path.join(thirdPartyRoot, "wasm-spec"),
   m4: thirdPartyRoot
 };

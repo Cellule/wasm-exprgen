@@ -1,17 +1,32 @@
 import {outputDir, toolsDirectory} from "./init";
 import fs from "fs-extra";
 import path from "path";
-import {execFileAsync} from "child_process";
-import {generateDependencies, emscriptenDependencies} from "./dependencies";
+import {spawn} from "child_process";
+import {generateDependencies} from "./dependencies";
+import {waitUntilDone} from "./utils";
 
-export default async function generate() {
-  const {csmith} = await generateDependencies();
-  const {runEmcc} = await emscriptenDependencies();
+/*
+export const sourceTypes = {
+  c: Symbol(),
+  cpp: Symbol(),
+  cpp11: Symbol()
+}
+*/
+
+export default async function generate({
+  //sourceType = "c"
+}, execOptions = {}) {
+  const {csmith, wasm, runEmcc} = await generateDependencies();
 
   await fs.ensureDirAsync(outputDir);
-  await execFileAsync(csmith, ["-o", "test.c"], {
-    cwd: outputDir
+  // Generate random c file
+  const csmithProc = spawn(csmith, ["-o", "test.c"], {
+    stdio: "inherit",
+    cwd: outputDir,
+    ...execOptions
   });
+  await waitUntilDone(csmithProc);
+
   /*
   await execFileAsync(csmithExe, ["-o", "test.cpp", "--lang-cpp"], {
     cwd: outputDir
@@ -20,18 +35,29 @@ export default async function generate() {
     cwd: outputDir
   });
   */
+
+  // Generate wasm version
   await runEmcc([
     "test.c",
     `-I${path.relative(outputDir, path.join(toolsDirectory, "csmith/inc"))}`,
     ..."-O3 -s WASM=1 -o test.js".split(" "),
-    //"-s", "BINARYEN_METHOD='interpret-binary'",
-  ], {cwd: outputDir});
+  ], {cwd: outputDir, ...execOptions});
+
+  // Make sure it is valid
+  // Emscripten sometimes generates invalid wasm file, should investigate
+  const specProc = spawn(wasm, [path.resolve(outputDir, "test.wasm"), "-d"], {
+    cwd: outputDir,
+    ...execOptions
+  });
+  await waitUntilDone(specProc);
+
+  // Generate interpreted version to compare result
   await runEmcc([
     "test.c",
     `-I${path.relative(outputDir, path.join(toolsDirectory, "csmith/inc"))}`,
     ..."-O3 -s BINARYEN_METHOD='interpret-binary' -o interpret.js".split(" "),
-    //,
-  ], {cwd: outputDir});
+  ], {cwd: outputDir, ...execOptions});
+
   return {
     src: path.resolve(outputDir, "test.c"),
     wasm: path.resolve(outputDir, "test.js"),
