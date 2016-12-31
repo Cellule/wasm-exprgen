@@ -21,17 +21,18 @@ export default async function generate({
   outdir = defaultOutdir,
   execOptions = {},
 } = {}) {
-  const {csmith, wasm, runEmcc} = await generateDependencies();
+  const {csmith, wasm, runEmcc, runEmpp} = await generateDependencies();
 
   await fs.ensureDirAsync(outdir);
 
   // Generate random c file
   let sourceFile = path.resolve(outdir, srcFileName);
   const csmithArgs = [];
-
+  let transpiler;
   switch (sourceType) {
     case sourceTypes.c:
       sourceFile += ".c";
+      transpiler = runEmcc;
       break;
     case sourceTypes.cpp11:
       csmithArgs.push("--cpp11");
@@ -39,6 +40,7 @@ export default async function generate({
     case sourceTypes.cpp:
       sourceFile += ".cpp";
       csmithArgs.push("--lang-cpp");
+      transpiler = runEmpp;
       break;
     default: throw new Error("Unknown source type");
   }
@@ -56,7 +58,7 @@ export default async function generate({
     "-O3",
   ];
   const wasmFile = path.resolve(outdir, `${wasmFileName}.js`);
-  await runEmcc([
+  await transpiler([
     ...emccCommonArgs,
     "-s", "WASM=1",
     "-o", wasmFile
@@ -76,7 +78,7 @@ export default async function generate({
   let interpretedFile = null;
   if (interpreted) {
     interpretedFile = path.resolve(outdir, `${interpretedFileName}.js`);
-    await runEmcc([
+    await transpiler([
       ...emccCommonArgs,
       "-s", "BINARYEN_METHOD='interpret-binary'",
       "-o", interpretedFile
