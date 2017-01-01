@@ -17,6 +17,7 @@ export default async function generate({
   interpreted = true,
   fileName = "test",
   outdir = defaultOutdir,
+  inlineWasm = false,
   execOptions = {},
 } = {}) {
   const {csmith, wasm, runEmcc, runEmpp} = await generateDependencies();
@@ -69,6 +70,35 @@ export default async function generate({
       ...execOptions
     });
     await waitUntilDone(specProc);
+  }
+
+  if (inlineWasm) {
+    const wasmBuffer = await fs.readFileAsync(wasmFile, "binary");
+    let string = "";
+    for (let i = 0; i < wasmBuffer.length; ++i) {
+      string += `\\x${wasmBuffer.charCodeAt(i).toString(16).padStart(2, "0")}`;
+    }
+    const buf = `
+var wasmBuffer = "${string}";
+var Module = {};
+Object.defineProperty(Module, "readBinary", {
+  // Prevent from overwriting this property
+  writable: false,
+  value: function(file) {
+    var buffer = new ArrayBuffer(wasmBuffer.length);
+    var view = new Uint8Array(buffer);
+    for (var i = 0; i < wasmBuffer.length; ++i) {
+      view[i] = wasmBuffer.charCodeAt(i);
+    }
+    return view;
+  }
+});
+`;
+    const oldFile = await fs.readFileAsync(jsFile);
+    const fd = await fs.openAsync(jsFile, "w");
+    await fs.writeAsync(fd, buf, 0);
+    await fs.writeAsync(fd, oldFile, 0, oldFile.length);
+    await fs.closeAsync(fd);
   }
 
   return {

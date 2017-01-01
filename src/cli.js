@@ -45,6 +45,10 @@ yargs
           describe: "Name of the generated files (without extension)",
           default: "test"
         },
+        inline: {
+          boolean: true,
+          describe: "Inline the WebAssembly module in the javascript file"
+        },
         silent: {
           alias: "s",
           boolean: true,
@@ -57,6 +61,7 @@ yargs
         validate: argv.validate,
         fileName: argv.fileName,
         outdir: argv.outdir,
+        inlineWasm: argv.inline,
         execOptions: {},
       };
       if (argv.silent) {
