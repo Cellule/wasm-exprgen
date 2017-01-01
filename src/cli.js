@@ -40,20 +40,10 @@ yargs
           describe: "Generate interpreted version for comparison purposes",
           default: true
         },
-        "src-name": {
+        "fileName": {
           string: true,
-          describe: "Name of the source file (without extension)",
+          describe: "Name of the generated files (without extension)",
           default: "test"
-        },
-        "wasm-name": {
-          string: true,
-          describe: "Name of the WebAssembly javascript file (without extension)",
-          default: "test"
-        },
-        "interpreted-name": {
-          string: true,
-          describe: "Name of the javascript file for interpreted version (without extension)",
-          default: "interpreted"
         },
         silent: {
           alias: "s",
@@ -65,10 +55,7 @@ yargs
       const args = {
         sourceType: sourceTypes[argv.type],
         validate: argv.validate,
-        interpreted: argv.interpreted,
-        srcFileName: argv.srcName,
-        wasmFileName: argv.wasmName,
-        interpretedFileName: argv.interpretedName,
+        fileName: argv.fileName,
         outdir: argv.outdir,
         execOptions: {},
       };
@@ -86,12 +73,10 @@ async function doGenerate(maxAttempts, args) {
   while (maxAttempts === 0 || nAttempts < maxAttempts) {
     nAttempts++;
     try {
-      const {wasm, src, interpret} = await generate(args);
+      const {wasm, src, js} = await generate(args);
       console.log(`Source file: ${src}`);
+      console.log(`Javascript file: ${js}`);
       console.log(`WebAssembly file: ${wasm}`);
-      if (interpret) {
-        console.log(`Javascript file: ${interpret}`);
-      }
       return;
     } catch (e) {
       console.log("Failed to generate test");

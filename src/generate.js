@@ -15,9 +15,7 @@ export default async function generate({
   sourceType = sourceTypes.c,
   validate = true,
   interpreted = true,
-  srcFileName = "test",
-  wasmFileName = "test",
-  interpretedFileName = "interpreted",
+  fileName = "test",
   outdir = defaultOutdir,
   execOptions = {},
 } = {}) {
@@ -26,7 +24,7 @@ export default async function generate({
   await fs.ensureDirAsync(outdir);
 
   // Generate random c file
-  let sourceFile = path.resolve(outdir, srcFileName);
+  let sourceFile = path.resolve(outdir, fileName);
   const csmithArgs = [];
   let transpiler;
   switch (sourceType) {
@@ -52,42 +50,30 @@ export default async function generate({
   await waitUntilDone(csmithProc);
 
   // Generate wasm version
-  const emccCommonArgs = [
+  const jsFile = path.resolve(outdir, `${fileName}.js`);
+  await transpiler([
     sourceFile,
     `-I${path.join(toolsDirectory, "csmith/inc")}`,
     "-O3",
-  ];
-  const wasmFile = path.resolve(outdir, `${wasmFileName}.js`);
-  await transpiler([
-    ...emccCommonArgs,
     "-s", "WASM=1",
-    "-o", wasmFile
+    "-s", `BINARYEN_METHOD='native-wasm${interpreted ? ",interpret-binary" : ""}'`,
+    "-o", jsFile
   ], {cwd: outdir, ...execOptions});
 
+  const wasmFile = path.resolve(outdir, `${fileName}.wasm`);
   // Make sure it is valid
   // Emscripten sometimes generates invalid wasm file, should investigate
   if (validate) {
-    const specProc = spawn(wasm, [path.resolve(outdir, "test.wasm"), "-d"], {
+    const specProc = spawn(wasm, [wasmFile, "-d"], {
       cwd: outdir,
       ...execOptions
     });
     await waitUntilDone(specProc);
   }
 
-  // Generate interpreted version to compare result
-  let interpretedFile = null;
-  if (interpreted) {
-    interpretedFile = path.resolve(outdir, `${interpretedFileName}.js`);
-    await transpiler([
-      ...emccCommonArgs,
-      "-s", "BINARYEN_METHOD='interpret-binary'",
-      "-o", interpretedFile
-    ], {cwd: outdir, ...execOptions});
-  }
-
   return {
     src: sourceFile,
+    js: jsFile,
     wasm: wasmFile,
-    interpret: interpretedFile,
   };
 }
