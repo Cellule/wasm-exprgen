@@ -55,13 +55,14 @@ export default async function generate({
   await transpiler([
     sourceFile,
     `-I${path.join(toolsDirectory, "csmith/inc")}`,
-    "-O3",
+    `-O${(Math.random() % 3)|0}`,
     "-s", "WASM=1",
     "-s", `BINARYEN_METHOD='native-wasm${interpreted ? ",interpret-binary" : ""}'`,
     "-o", jsFile
   ], {cwd: outdir, ...execOptions});
 
   const wasmFile = path.resolve(outdir, `${fileName}.wasm`);
+  const wastFile = path.resolve(outdir, `${fileName}.wast`);
   // Make sure it is valid
   // Emscripten sometimes generates invalid wasm file, should investigate
   if (validate) {
@@ -105,5 +106,6 @@ Object.defineProperty(Module, "readBinary", {
     src: sourceFile,
     js: jsFile,
     wasm: wasmFile,
+    wast: wastFile,
   };
 }
