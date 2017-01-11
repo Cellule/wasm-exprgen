@@ -81,7 +81,7 @@ export default async function generate({
     }
   }
 
-  const oldFile = await fs.readFileAsync(jsFile);
+  const oldFile = (await fs.readFileAsync(jsFile)).toString();
   const fd = await fs.openAsync(jsFile, "w");
   await fs.writeAsync(fd, `// Generated with options: ${randomOptions.join(" ")}\n\n`);
   if (inlineWasm) {
@@ -156,12 +156,20 @@ function getRandomEmscriptenOptions() {
   let totalMem = 256 * wasmPageSize;
   if (changeTotalMem) {
     changedDefaultMem = true;
-    totalMem = (wasmPageSize * getRandomInt(32768)) | 0;
+    totalMem = (wasmPageSize * getRandomInt(16000)) | 0;
     options.push("-s", `TOTAL_MEMORY=${totalMem}`);
   }
 
   if (changedDefaultMem && !doMemGrowth) {
-    options.push("-s", `BINARYEN_MEM_MAX=${Math.max(totalMem*2, totalStack*2)|0}`);
+    var totalMemory = wasmPageSize;
+    while (totalMemory < totalMem || totalMemory < 2*totalStack) {
+      if (totalMemory < 16*1024*1024) {
+        totalMemory *= 2;
+      } else {
+        totalMemory += 16*1024*1024;
+      }
+    }
+    options.push("-s", `BINARYEN_MEM_MAX=${totalMemory>>>0}`);
   }
 
   /* Currently not supported for WebAssembly
