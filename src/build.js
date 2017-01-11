@@ -151,8 +151,8 @@ async function buildSpecInterpreter() {
 }
 
 checkSubmodules()
-  //.then(buildSpecInterpreter)
+  .then(buildSpecInterpreter)
   .then(buildCSmith)
-  //.then(buildLLVM)
-  //.then(prepareEmscriptenConfig)
+  .then(buildLLVM)
+  .then(prepareEmscriptenConfig)
   .catch(err => console.error(err));

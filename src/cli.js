@@ -40,7 +40,7 @@ yargs
           describe: "Generate interpreted version for comparison purposes",
           default: true
         },
-        "fileName": {
+        fileName: {
           string: true,
           describe: "Name of the generated files (without extension)",
           default: "test"
@@ -78,10 +78,10 @@ async function doGenerate(maxAttempts, args) {
   while (maxAttempts === 0 || nAttempts < maxAttempts) {
     nAttempts++;
     try {
-      const {wasm, src, js} = await generate(args);
+      const {wasm, src, js, valid} = await generate(args);
       console.log(`Source file: ${src}`);
       console.log(`Javascript file: ${js}`);
-      console.log(`WebAssembly file: ${wasm}`);
+      console.log(`WebAssembly file: ${wasm}${args.validate ? ` is ${valid ? "" : "not "}valid`: ""}`);
       return;
     } catch (e) {
       console.log("Failed to generate test");

@@ -20,7 +20,7 @@ export async function checkSubmodules() {
       await fs.ensureSymlinkAsync(clangPath, symlink, "dir");
     } catch (e) {
       if (e.code === "EPERM") {
-        console.warn(`You need to be administrator to create a symlink.
+        throw new Error(`You need to be administrator to create a symlink.
 Either rerun with administrative priviledges, create symlink manually or copy clang to fastcomp tools`);
       } else {
         throw e;

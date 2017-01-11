@@ -10,6 +10,6 @@
 [submodule "emscripten"]
 	path = third_party/emscripten
 	url = https://github.com/kripken/emscripten
-[submodule "third_party\\wasm-spec"]
-	path = third_party\\wasm-spec
+[submodule "wasm-spec"]
+	path = third_party/wasm-spec
 	url = https://github.com/WebAssembly/spec.git
