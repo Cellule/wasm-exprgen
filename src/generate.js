@@ -81,7 +81,7 @@ export default async function generate({
     }
   }
 
-  const oldFile = (await fs.readFileAsync(jsFile)).toString();
+  let oldFile = (await fs.readFileAsync(jsFile)).toString();
   const fd = await fs.openAsync(jsFile, "w");
   await fs.writeAsync(fd, `// Generated with options: ${randomOptions.join(" ")}\n\n`);
   if (inlineWasm) {
@@ -91,22 +91,19 @@ export default async function generate({
       string += `\\x${wasmBuffer.charCodeAt(i).toString(16).padStart(2, "0")}`;
     }
     const buf = `
+// {{PRE_WASM_EXPRGEN}}
 var wasmBuffer = "${string}";
-var Module = {};
-Object.defineProperty(Module, "readBinary", {
-  // Prevent from overwriting this property
-  writable: false,
-  value: function(file) {
-    var buffer = new ArrayBuffer(wasmBuffer.length);
-    var view = new Uint8Array(buffer);
-    for (var i = 0; i < wasmBuffer.length; ++i) {
-      view[i] = wasmBuffer.charCodeAt(i);
-    }
-    return view;
+Module["readBinary"] = function(file) {
+  var buffer = new ArrayBuffer(wasmBuffer.length);
+  var view = new Uint8Array(buffer);
+  for (var i = 0; i < wasmBuffer.length; ++i) {
+    view[i] = wasmBuffer.charCodeAt(i);
   }
-});\n\n
+  return view;
+}
+\n\n// {{POST_WASM_EXPRGEN}}\n\n
 `;
-    await fs.writeAsync(fd, buf);
+    oldFile = oldFile.replace("{{PREAMBLE_ADDITIONS}}", `{{PREAMBLE_ADDITIONS}}\n${buf}`);
   }
   await fs.writeAsync(fd, oldFile);
   await fs.closeAsync(fd);
