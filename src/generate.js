@@ -92,6 +92,7 @@ export default async function generate({
     }
     const buf = `
 // {{PRE_WASM_EXPRGEN}}
+var Module = Module || {};
 var wasmBuffer = "${string}";
 Module["readBinary"] = function(file) {
   var buffer = new ArrayBuffer(wasmBuffer.length);
@@ -103,7 +104,23 @@ Module["readBinary"] = function(file) {
 }
 \n\n// {{POST_WASM_EXPRGEN}}\n\n
 `;
-    oldFile = oldFile.replace("{{PREAMBLE_ADDITIONS}}", `{{PREAMBLE_ADDITIONS}}\n${buf}`);
+    await fs.writeAsync(fd, buf);
+
+const nodeRegenOption =
+`
+if (ENVIRONMENT_IS_NODE && Module["arguments"].indexOf("--regen-wasm") !== -1) {
+  var wasmBinaryFile = Module['wasmBinaryFile'] || "${path.basename(wasmFile)}";
+  var bin = Module["readBinary"](wasmBinaryFile);
+  var wstream = require("fs").createWriteStream(wasmBinaryFile, {defaultEncoding: "binary"});
+  wstream.write(Buffer.from(bin.buffer));
+  wstream.end();
+  wstream.on("finish", function() {
+    console.log("WebAssembly binary buffer written to " + wasmBinaryFile);
+  });
+} else {
+`;
+    oldFile = oldFile.replace("{{PRE_RUN_ADDITIONS}}", `{{PRE_RUN_ADDITIONS}}\n${nodeRegenOption}`);
+    oldFile = oldFile.replace("// {{POST_RUN_ADDITIONS}}", "}\n// {{POST_RUN_ADDITIONS}}");
   }
   await fs.writeAsync(fd, oldFile);
   await fs.closeAsync(fd);
