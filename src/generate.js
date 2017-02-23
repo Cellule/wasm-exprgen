@@ -19,6 +19,7 @@ export default async function generate({
   outdir = defaultOutdir,
   inlineWasm = false,
   execOptions = {},
+  forceBinaryVersion,
 } = {}) {
   const {csmith, wasm, runEmcc, runEmpp} = await generateDependencies();
 
@@ -64,6 +65,29 @@ export default async function generate({
 
   const wasmFile = path.resolve(outdir, `${fileName}.wasm`);
   const wastFile = path.resolve(outdir, `${fileName}.wast`);
+  if (forceBinaryVersion !== undefined) {
+    let version = forceBinaryVersion|0;
+    console.log(`Forcing wasm version to 0x${version.toString(16)}`);
+    let b = "";
+    for (let i = 0; i < 4; ++i) {
+      let v = (version & 0xFF).toString(16);
+      while (v.length < 2) {
+        v = "0" + v;
+      }
+      b += `\\x${v}`;
+      version >>= 8;
+    }
+    const b2 = eval(`"${b}"`);
+    const fd = await fs.openAsync(wasmFile, "r+");
+    try {
+      await fs.writeAsync(fd, b2, 4, "binary");
+    } catch (e) {
+      throw e;
+    } finally {
+      await fs.closeAsync(fd);
+    }
+  }
+
   // Make sure it is valid
   // Emscripten sometimes generates invalid wasm file, should investigate
   let isValid;

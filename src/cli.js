@@ -53,6 +53,10 @@ yargs
           alias: "s",
           boolean: true,
           describe: "Silently run generating tools"
+        },
+        wasmVersion: {
+          number: true,
+          describe: "The version of wasm binary to use (currently only changes the number in the resulting binary)"
         }
       }),
     handler: (argv) => {
@@ -63,6 +67,7 @@ yargs
         outdir: argv.outdir,
         inlineWasm: argv.inline,
         execOptions: {},
+        forceBinaryVersion: argv.wasmversion,
       };
       if (argv.silent) {
         args.execOptions.stdio = "ignore";
