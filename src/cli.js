@@ -67,7 +67,7 @@ yargs
         outdir: argv.outdir,
         inlineWasm: argv.inline,
         execOptions: {},
-        forceBinaryVersion: argv.wasmversion,
+        forceBinaryVersion: argv.wasmVersion,
       };
       if (argv.silent) {
         args.execOptions.stdio = "ignore";

@@ -67,7 +67,6 @@ export default async function generate({
   const wastFile = path.resolve(outdir, `${fileName}.wast`);
   if (forceBinaryVersion !== undefined) {
     let version = forceBinaryVersion|0;
-    console.log(`Forcing wasm version to 0x${version.toString(16)}`);
     let b = "";
     for (let i = 0; i < 4; ++i) {
       let v = (version & 0xFF).toString(16);
