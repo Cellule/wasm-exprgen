@@ -18,8 +18,7 @@ export default async function generate({
   fileName = "test",
   outdir = defaultOutdir,
   inlineWasm = false,
-  execOptions = {},
-  forceBinaryVersion,
+  execOptions = {}
 } = {}) {
   const {csmith, wasm, runEmcc, runEmpp} = await generateDependencies();
 
@@ -62,45 +61,39 @@ export default async function generate({
     ...randomOptions,
     "-o", jsFile
   ], {cwd: outdir, ...execOptions});
-
   const wasmFile = path.resolve(outdir, `${fileName}.wasm`);
   const wastFile = path.resolve(outdir, `${fileName}.wast`);
-  if (forceBinaryVersion !== undefined) {
-    let version = forceBinaryVersion|0;
-    let b = "";
-    for (let i = 0; i < 4; ++i) {
-      let v = (version & 0xFF).toString(16);
-      while (v.length < 2) {
-        v = "0" + v;
-      }
-      b += `\\x${v}`;
-      version >>= 8;
-    }
-    const b2 = eval(`"${b}"`);
-    const fd = await fs.openAsync(wasmFile, "r+");
-    try {
-      await fs.writeAsync(fd, b2, 4, "binary");
-    } catch (e) {
-      throw e;
-    } finally {
-      await fs.closeAsync(fd);
-    }
-  }
 
   // Make sure it is valid
   // Emscripten sometimes generates invalid wasm file, should investigate
   let isValid;
+  const wasmSpecOutput = {stdout: "", stderr: ""};
   if (validate) {
     isValid = false;
     const specProc = spawn(wasm, [wasmFile, "-d"], {
-      cwd: outdir,
-      ...execOptions
+      cwd: outdir
     });
     try {
-      await waitUntilDone(specProc);
+      await waitUntilDone(specProc, {getOutput: wasmSpecOutput});
       isValid = true;
     } catch (e) {
-      // ignore
+      inlineWasm = true;
+      const match = /0x[0-9a-f]+:(.+)$/mi.exec(wasmSpecOutput.stderr);
+      const specErrorMessage = match && match[1] || wasmSpecOutput.stdout + wasmSpecOutput.stderr;
+      const newJsFile = `
+// check environment for wasm regen
+var ENVIRONMENT_IS_NODE = typeof require !== "undefined";
+if (ENVIRONMENT_IS_NODE) {
+  Module["arguments"] = process.argv.slice(1);
+}
+
+// {{PRE_RUN_ADDITIONS}}
+if (WebAssembly.validate(Module["readBinary"]())) {
+    throw new Error("Fatal error: Expected binary to be invalid because: ${specErrorMessage}");
+}
+// {{POST_RUN_ADDITIONS}}
+`;
+      await fs.writeFileAsync(jsFile, newJsFile);
     }
   }
 
@@ -129,7 +122,7 @@ Module["readBinary"] = function(file) {
 `;
     await fs.writeAsync(fd, buf);
 
-const nodeRegenOption =
+    const nodeRegenOption =
 `
 if (ENVIRONMENT_IS_NODE && Module["arguments"].indexOf("--regen-wasm") !== -1) {
   var wasmBinaryFile = Module['wasmBinaryFile'] || "${path.basename(wasmFile)}";
@@ -154,6 +147,7 @@ if (ENVIRONMENT_IS_NODE && Module["arguments"].indexOf("--regen-wasm") !== -1) {
     wasm: wasmFile,
     wast: wastFile,
     valid: isValid,
+    wasmSpecOutput
   };
 }
 
