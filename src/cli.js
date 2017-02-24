@@ -1,6 +1,7 @@
 import yargs from "yargs";
 import generate, {sourceTypes} from "./generate";
 import {outputDir} from "./init";
+import build, {prepareEmscriptenConfig} from "./build";
 
 yargs
   .usage()
@@ -8,9 +9,33 @@ yargs
   .alias("h", "help")
   .wrap(Math.min(yargs.terminalWidth() - 1, 120))
   .command({
+    command: "config",
+    desc: "Updates Emscripten configuration file for this machine",
+    handler() {
+      prepareEmscriptenConfig()
+        .then(() => console.log("Configuration completed"))
+        .catch(err => {
+          console.error(err);
+          process.exit(1);
+        });
+    }
+  })
+  .command({
+    command: "build",
+    desc: "Build the tools needed",
+    handler() {
+      build()
+        .then(() => console.log("Build completed"))
+        .catch(err => {
+          console.error(err);
+          process.exit(1);
+        });
+    }
+  })
+  .command({
     command: "gen",
     desc: "generate a random WebAssembly test file",
-    builder: (yargs) => yargs
+    builder: (_yargs) => _yargs
       .options({
         attempts: {
           alias: "a",
@@ -81,7 +106,7 @@ async function doGenerate(maxAttempts, args) {
       const {wasm, src, js, valid} = await generate(args);
       console.log(`Source file: ${src}`);
       console.log(`Javascript file: ${js}`);
-      console.log(`WebAssembly file: ${wasm}${args.validate ? ` is ${valid ? "" : "not "}valid`: ""}`);
+      console.log(`WebAssembly file: ${wasm}${args.validate ? ` is ${valid ? "" : "not "}valid` : ""}`);
       return;
     } catch (e) {
       console.log("Failed to generate test");

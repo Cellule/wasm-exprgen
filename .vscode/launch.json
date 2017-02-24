@@ -7,8 +7,8 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
-            "program": "${workspaceRoot}\\src\\cli.js",
+            "name": "Generate test file",
+            "program": "${workspaceRoot}\\cli.js",
             "cwd": "${workspaceRoot}",
             "sourceMaps": true,
             "preLaunchTask": "build",
@@ -18,10 +18,43 @@
             "stopOnEntry": false,
             "args": [
                 "gen",
-                "--inline",
-                "--wasmversion", "0xd"
+                "--inline"
             ],
-             "runtimeArgs": [ "--nolazy", "-r", "babel-polyfill" ]
+             "runtimeArgs": [ "--nolazy" ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Build tools",
+            "program": "${workspaceRoot}\\cli.js",
+            "cwd": "${workspaceRoot}",
+            "sourceMaps": true,
+            "preLaunchTask": "build",
+            "outFiles": [
+                "${workspaceRoot}\\lib\\**"
+            ],
+            "stopOnEntry": false,
+            "args": [
+                "build"
+            ],
+             "runtimeArgs": [ "--nolazy" ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Config",
+            "program": "${workspaceRoot}\\cli.js",
+            "cwd": "${workspaceRoot}",
+            "sourceMaps": true,
+            "preLaunchTask": "build",
+            "outFiles": [
+                "${workspaceRoot}\\lib\\**"
+            ],
+            "stopOnEntry": false,
+            "args": [
+                "config"
+            ],
+             "runtimeArgs": [ "--nolazy" ]
         },
         {
             "type": "node",

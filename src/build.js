@@ -9,6 +9,7 @@ import {
 } from "./dependencies";
 import {execFileAsync, spawn} from "child_process";
 import {waitUntilDone} from "./utils";
+import generate from "./generate";
 
 async function buildCSmith() {
   const {msbuild, make, m4} = await csmithDependencies();
@@ -114,7 +115,7 @@ async function buildLLVM() {
   console.log(`LLVM output: ${binDirectory.llvm}`);
 }
 
-async function prepareEmscriptenConfig() {
+export async function prepareEmscriptenConfig() {
   const {python} = await emscriptenDependencies();
   const cleanPath = p => p.replace(/\\/g, "/");
   const tmpDir = path.join(outputDir, "tmp");
@@ -154,9 +155,15 @@ async function buildSpecInterpreter() {
   console.log(`Wasm Spec output: ${binDirectory.spec}`);
 }
 
-buildSpecInterpreter()
-  .catch(err => console.error("Error while building WebAssembly interpreter, validation will not be available\n" + err))
-  .then(buildCSmith)
-  .then(buildLLVM)
-  .then(prepareEmscriptenConfig)
-  .catch(err => console.error(err));
+export default function build() {
+  return buildSpecInterpreter()
+    .catch(err => console.error("Error while building WebAssembly interpreter, validation will not be available\n" + err))
+    .then(buildCSmith)
+    .then(buildLLVM)
+    .then(prepareEmscriptenConfig)
+    // Do one generation to trigger binaryen's build
+    .then(() => generate()
+      // It is possible to fail to generate a test file here, that doesn't mean the build failed...
+      .catch(err => console.error(err))
+    );
+}

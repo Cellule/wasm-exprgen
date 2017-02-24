@@ -2,11 +2,14 @@
   "name": "wasm-exprgen-scripts",
   "version": "1.0.0",
   "description": "",
-  "main": "lib/index.js",
+  "main": "index.js",
+  "bin": {
+    "wasm-exprgen": "cli.js"
+  },
   "scripts": {
     "build": "babel src --out-dir lib",
-    "build-tools": "node -r babel-polyfill lib/build.js",
-    "gen": "node -r babel-polyfill lib/cli.js gen",
+    "build-tools": "node cli.js build",
+    "gen": "node cli.js gen",
     "lint": "eslint src"
   },
   "author": "Michael Ferris <mike.ferris@hotmail.com>",
