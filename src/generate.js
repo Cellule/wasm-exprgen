@@ -69,7 +69,7 @@ export default async function generate({
   // Emscripten sometimes generates invalid wasm file, should investigate
   let isValid;
   const wasmSpecOutput = {stdout: "", stderr: ""};
-  if (validate) {
+  if (validate && wasm) {
     isValid = false;
     const specProc = spawn(wasm, [wasmFile, "-d"], {
       cwd: outdir
@@ -96,6 +96,8 @@ if (WebAssembly.validate(Module["readBinary"]())) {
 `;
       await fs.writeFileAsync(jsFile, newJsFile);
     }
+  } else if (validate) {
+    console.warn("WebAssembly spec interpreter is missing, unable to do validation");
   }
 
   let oldFile = (await fs.readFileAsync(jsFile)).toString();

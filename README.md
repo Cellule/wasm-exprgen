@@ -6,6 +6,11 @@ This is a tool to generate random WebAssembly programs using csmith and emscript
 
 - Install [node.js & npm](https://nodejs.org/en/) version 0.10.17 and above
 - Install [Python 2.x](https://www.python.org/download/releases/2.7/)
+- Install [WebAssembly Interpreter](https://github.com/WebAssembly/spec/tree/master/interpreter#building) compiler dependencies (Optional)
+  - Windows
+    - [Ocaml](https://protz.github.io/ocaml-installer/)
+  - Linux
+    - [Ocaml](https://wasm.storage.googleapis.com/ocaml-4.02.2.tar.gz)
 - Install Compiler
   - Windows
     - [Visual Studio 2010 or above](https://www.visualstudio.com/), tested on Visual Studio 2015

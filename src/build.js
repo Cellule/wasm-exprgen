@@ -155,6 +155,7 @@ async function buildSpecInterpreter() {
 }
 
 buildSpecInterpreter()
+  .catch(err => console.error("Error while building WebAssembly interpreter, validation will not be available\n" + err))
   .then(buildCSmith)
   .then(buildLLVM)
   .then(prepareEmscriptenConfig)
