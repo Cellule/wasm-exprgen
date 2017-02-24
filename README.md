@@ -25,7 +25,6 @@ git submodule update --init
 
 # Install required modules for build scripts
 npm install --production
-npm run setup # You might have to deal with symlink permissons
 ```
 
 ## Building tools

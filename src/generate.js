@@ -20,6 +20,7 @@ export default async function generate({
   inlineWasm = false,
   execOptions = {}
 } = {}) {
+  let shouldInlineWasm = inlineWasm;
   const {csmith, wasm, runEmcc, runEmpp} = await generateDependencies();
 
   await fs.ensureDirAsync(outdir);
@@ -77,7 +78,7 @@ export default async function generate({
       await waitUntilDone(specProc, {getOutput: wasmSpecOutput});
       isValid = true;
     } catch (e) {
-      inlineWasm = true;
+      shouldInlineWasm = true;
       const match = /0x[0-9a-f]+:(.+)$/mi.exec(wasmSpecOutput.stderr);
       const specErrorMessage = match && match[1] || wasmSpecOutput.stdout + wasmSpecOutput.stderr;
       const newJsFile = `
@@ -100,7 +101,7 @@ if (WebAssembly.validate(Module["readBinary"]())) {
   let oldFile = (await fs.readFileAsync(jsFile)).toString();
   const fd = await fs.openAsync(jsFile, "w");
   await fs.writeAsync(fd, `// Generated with options: ${randomOptions.join(" ")}\n\n`);
-  if (inlineWasm) {
+  if (shouldInlineWasm) {
     const wasmBuffer = await fs.readFileAsync(wasmFile, "binary");
     let string = "";
     for (let i = 0; i < wasmBuffer.length; ++i) {
@@ -154,9 +155,9 @@ if (ENVIRONMENT_IS_NODE && Module["arguments"].indexOf("--regen-wasm") !== -1) {
 function getRandomEmscriptenOptions() {
   // Returns a random integer between min (included) and max (excluded)
   // Using Math.round() will give you a non-uniform distribution!
-  function getRandomInt(max, min = 0) {
-    min = Math.ceil(min);
-    max = Math.floor(max) + 1;
+  function getRandomInt(_max, _min = 0) {
+    const min = Math.ceil(_min);
+    const max = Math.floor(_max) + 1;
     return Math.floor(Math.random() * (max - min)) + min;
   }
   // odds: chance to be true out of 10
@@ -193,14 +194,14 @@ function getRandomEmscriptenOptions() {
 
   if (changedDefaultMem && !doMemGrowth) {
     var totalMemory = wasmPageSize;
-    while (totalMemory < totalMem || totalMemory < 2*totalStack) {
-      if (totalMemory < 16*1024*1024) {
+    while (totalMemory < totalMem || totalMemory < 2 * totalStack) {
+      if (totalMemory < 16 * 1024 * 1024) {
         totalMemory *= 2;
       } else {
-        totalMemory += 16*1024*1024;
+        totalMemory += 16 * 1024 * 1024;
       }
     }
-    options.push("-s", `BINARYEN_MEM_MAX=${totalMemory>>>0}`);
+    options.push("-s", `BINARYEN_MEM_MAX=${totalMemory >>> 0}`);
   }
 
   /* Currently not supported for WebAssembly

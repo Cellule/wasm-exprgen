@@ -1,5 +1,6 @@
-import {rootDir, binDirectory, outputDir, thirdParties, isWindows} from "./init";
+import {binDirectory, outputDir, thirdParties, isWindows} from "./init";
 import path from "path";
+import fs from "fs-extra";
 import {spawn} from "child_process";
 import {waitUntilDone} from "./utils";
 import which from "which";
@@ -29,13 +30,35 @@ async function searchForMsBuild() {
     console.log(`MsBuild path: ${p}`);
     return msbuildCache;
   };
-  const paths = ["14.0", "12.0", "10.0"].map(version => [
-    path.resolve(process.env.ProgramFiles, "msbuild", version, "bin/x86"),
-    path.resolve(process.env["ProgramFiles(x86)"], "msbuild", version, "bin"),
-    path.resolve(process.env["ProgramFiles(x86)"], "msbuild", version, "bin/amd64"),
-  ].join(";")).join(";");
 
-  const rPath = (await fromPath("msbuild.exe")) || (await fromPath("msbuild.exe", {path: paths}));
+  const getPaths = () => {
+    const dev15Paths = ["15.0"].map(version => {
+      const possiblePaths = [
+        {root: path.resolve(process.env.ProgramFiles, "Microsoft Visual Studio", "2017"), rest: ["msbuild", version, "bin/x86"]},
+        {root: path.resolve(process.env["ProgramFiles(x86)"], "Microsoft Visual Studio", "2017"), rest: ["msbuild", version, "bin"]},
+        {root: path.resolve(process.env["ProgramFiles(x86)"], "Microsoft Visual Studio", "2017"), rest: ["msbuild", version, "bin/amd64"]},
+      ];
+      return possiblePaths.reduce((allPaths, info) => {
+        try {
+          const content = fs.readdirSync(info.root);
+          for (const dir of content) {
+            allPaths.push(path.join(info.root, dir, ...info.rest));
+          }
+        } catch (e) {
+          // ignore
+        }
+        return allPaths;
+      }, []).join(";");
+    }).join(";");
+
+    const oldDevPaths = ["14.0", "12.0", "10.0"].map(version => [
+      path.resolve(process.env.ProgramFiles, "msbuild", version, "bin/x86"),
+      path.resolve(process.env["ProgramFiles(x86)"], "msbuild", version, "bin"),
+      path.resolve(process.env["ProgramFiles(x86)"], "msbuild", version, "bin/amd64"),
+    ].join(";")).join(";");
+    return dev15Paths + oldDevPaths;
+  };
+  const rPath = (await fromPath("msbuild.exe")) || (await fromPath("msbuild.exe", {path: getPaths()}));
   if (rPath) {
     return cache(rPath);
   }

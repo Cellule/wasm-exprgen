@@ -5,7 +5,6 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "babel src --out-dir lib",
-    "setup": "node -r babel-polyfill lib/setup.js",
     "build-tools": "node -r babel-polyfill lib/build.js",
     "gen": "node -r babel-polyfill lib/cli.js gen",
     "lint": "eslint src"

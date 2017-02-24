@@ -1,4 +1,3 @@
-import {checkSubmodules} from "./git";
 import {buildDirectory, binDirectory, outputDir, thirdParties} from "./init";
 import path from "path";
 import fs from "fs-extra";
@@ -68,6 +67,11 @@ async function buildCSmith() {
 }
 
 async function buildLLVM() {
+  const clangPath = thirdParties.clang;
+  const clangDestPath = path.join(thirdParties.llvm, "tools/clang");
+  console.log(`Copying ${clangPath} => ${clangDestPath}`);
+  await fs.copyAsync(clangPath, clangDestPath);
+
   const {
     cmake,
     msbuild,
@@ -150,8 +154,7 @@ async function buildSpecInterpreter() {
   console.log(`Wasm Spec output: ${binDirectory.spec}`);
 }
 
-checkSubmodules()
-  .then(buildSpecInterpreter)
+buildSpecInterpreter()
   .then(buildCSmith)
   .then(buildLLVM)
   .then(prepareEmscriptenConfig)
