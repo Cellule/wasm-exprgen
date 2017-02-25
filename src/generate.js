@@ -176,7 +176,7 @@ function getRandomEmscriptenOptions() {
   let totalStack = 5 * 1024 * 1024;
   if (roll(3)) {
     changedDefaultMem = true;
-    totalStack = getRandomInt(20) * 1024 * 1024;
+    totalStack = getRandomInt(20, 1) * 1024 * 1024;
     options.push("-s", `TOTAL_STACK=${totalStack}`);
   }
 
