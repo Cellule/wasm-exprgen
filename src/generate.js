@@ -90,7 +90,7 @@ if (ENVIRONMENT_IS_NODE) {
 
 // {{PRE_RUN_ADDITIONS}}
 if (WebAssembly.validate(Module["readBinary"]())) {
-    throw new Error("Fatal error: Expected binary to be invalid because: ${specErrorMessage}");
+    throw new Error(\`Fatal error: Expected binary to be invalid because: ${specErrorMessage}\`);
 }
 // {{POST_RUN_ADDITIONS}}
 `;
