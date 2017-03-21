@@ -59,6 +59,8 @@ export default async function generate({
     `-I${path.join(toolsDirectory, "csmith/inc")}`,
     "-s", "WASM=1",
     "-s", `BINARYEN_METHOD='native-wasm${interpreted ? ",interpret-binary" : ""}'`,
+    "-s", "BINARYEN_ASYNC_COMPILATION=0",
+    "-g",
     ...randomOptions,
     "-o", jsFile
   ], {cwd: outdir, ...execOptions});
@@ -186,14 +188,15 @@ function getRandomEmscriptenOptions() {
     options.push("-s", "ALLOW_MEMORY_GROWTH=1");
   }
 
-  const changeTotalMem = roll(5);
   let totalMem = 256 * wasmPageSize;
-  if (changeTotalMem) {
-    changedDefaultMem = true;
-    totalMem = (wasmPageSize * getRandomInt(16000)) | 0;
-    options.push("-s", `TOTAL_MEMORY=${totalMem}`);
+  if (!changedDefaultMem) {
+    const changeTotalMem = roll(5);
+    if (changeTotalMem) {
+      changedDefaultMem = true;
+      totalMem = (wasmPageSize * getRandomInt(16000)) | 0;
+      options.push("-s", `TOTAL_MEMORY=${totalMem}`);
+    }
   }
-
   if (changedDefaultMem && !doMemGrowth) {
     var totalMemory = wasmPageSize;
     while (totalMemory < totalMem || totalMemory < 2 * totalStack) {
@@ -203,7 +206,7 @@ function getRandomEmscriptenOptions() {
         totalMemory += 16 * 1024 * 1024;
       }
     }
-    options.push("-s", `BINARYEN_MEM_MAX=${totalMemory >>> 0}`);
+    options.push("-s", `TOTAL_MEMORY=${totalMemory >>> 0}`);
   }
 
   /* Currently not supported for WebAssembly
