@@ -194,10 +194,10 @@ function getRandomEmscriptenOptions() {
     if (changeTotalMem) {
       changedDefaultMem = true;
       totalMem = (wasmPageSize * getRandomInt(16000)) | 0;
-      options.push("-s", `TOTAL_MEMORY=${totalMem}`);
     }
   }
-  if (changedDefaultMem && !doMemGrowth) {
+
+  if (changedDefaultMem) {
     var totalMemory = wasmPageSize;
     while (totalMemory < totalMem || totalMemory < 2 * totalStack) {
       if (totalMemory < 16 * 1024 * 1024) {
