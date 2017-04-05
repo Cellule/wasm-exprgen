@@ -134,8 +134,12 @@ async function searchPython() {
   }
   throw new Error("Python 2 is missing");
 }
-
+let emCache;
 export async function emscriptenDependencies() {
+  emCache = emCache || await emscriptenDependenciesInternal();
+  return emCache;
+}
+async function emscriptenDependenciesInternal() {
   const python = await searchPython();
   const emscriptenRoot = thirdParties.emscripten;
   const emcc = path.join(emscriptenRoot, "emcc.py");
@@ -161,8 +165,12 @@ export async function emscriptenDependencies() {
     runEmpp: runFn(empp)
   };
 }
-
+let specCache;
 export async function specInterpreterDependencies() {
+  specCache = specCache || await specInterpreterDependenciesInternal();
+  return specCache;
+}
+async function specInterpreterDependenciesInternal() {
   // todo:: check for ocaml
   if (isWindows) {
     return {
@@ -174,7 +182,13 @@ export async function specInterpreterDependencies() {
   };
 }
 
+let genDepCache;
 export async function generateDependencies() {
+  genDepCache = genDepCache || await generateDependenciesInternal();
+  return genDepCache;
+}
+
+async function generateDependenciesInternal() {
   const wasmExe = await fromPath("wasm") || await which.async("wasm", {path: binDirectory.spec});
   const csmithExe = await fromPath("csmith") || await which.async("csmith", {path: binDirectory.csmith});
   const clangExe = await fromPath("clang") || await which.async("clang", {path: binDirectory.llvm});

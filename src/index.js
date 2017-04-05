@@ -1,4 +1,5 @@
-import gen from "./generate";
+import gen, {compileFromSource} from "./generate";
 
 export const generate = gen;
+export const regen  = compileFromSource;
 

@@ -13,16 +13,12 @@ export const sourceTypes = {
 
 export default async function generate({
   sourceType = sourceTypes.c,
-  validate = true,
-  interpreted = true,
   fileName = "test",
   outdir = defaultOutdir,
-  inlineWasm = false,
-  execOptions = {}
+  execOptions = {},
+  ...args
 } = {}) {
-  let shouldInlineWasm = inlineWasm;
   const {csmith, wasm, runEmcc, runEmpp} = await generateDependencies();
-
   await fs.ensureDirAsync(outdir);
 
   // Generate random c file
@@ -50,10 +46,45 @@ export default async function generate({
     ...execOptions
   });
   await waitUntilDone(csmithProc);
+  const randomOptions = getRandomEmscriptenOptions();
+  return compile({
+    ...args,
+    sourceFile,
+    fileName,
+    outdir,
+    execOptions,
+    emOptions: randomOptions,
+    transpiler,
+    specInterpreter: wasm,
+  });
+}
 
+export async function compileFromSource(config) {
+  const {wasm, runEmcc} = await generateDependencies();
+
+  return compile({
+    ...config,
+    transpiler: runEmcc,
+    specInterpreter: wasm,
+  });
+}
+
+async function compile({
+  sourceFile,
+  validate = true,
+  interpreted = true,
+  fileName = "test",
+  outdir = defaultOutdir,
+  inlineWasm = false,
+  execOptions = {},
+  emOptions = [],
+  transpiler,
+  specInterpreter
+} = {}) {
+  await fs.ensureDirAsync(outdir);
+  let shouldInlineWasm = inlineWasm;
   // Generate wasm version
   const jsFile = path.resolve(outdir, `${fileName}.js`);
-  const randomOptions = getRandomEmscriptenOptions();
   await transpiler([
     sourceFile,
     `-I${path.join(toolsDirectory, "csmith/inc")}`,
@@ -61,7 +92,7 @@ export default async function generate({
     "-s", `BINARYEN_METHOD='native-wasm${interpreted ? ",interpret-binary" : ""}'`,
     "-s", "BINARYEN_ASYNC_COMPILATION=0",
     "-g",
-    ...randomOptions,
+    ...emOptions,
     "-o", jsFile
   ], {cwd: outdir, ...execOptions});
   const wasmFile = path.resolve(outdir, `${fileName}.wasm`);
@@ -71,9 +102,9 @@ export default async function generate({
   // Emscripten sometimes generates invalid wasm file, should investigate
   let isValid;
   const wasmSpecOutput = {stdout: "", stderr: ""};
-  if (validate && wasm) {
+  if (validate && specInterpreter) {
     isValid = false;
-    const specProc = spawn(wasm, [wasmFile, "-d"], {
+    const specProc = spawn(specInterpreter, [wasmFile, "-d"], {
       cwd: outdir
     });
     try {
@@ -104,7 +135,7 @@ if (WebAssembly.validate(Module["readBinary"]())) {
 
   let oldFile = (await fs.readFileAsync(jsFile)).toString();
   const fd = await fs.openAsync(jsFile, "w");
-  await fs.writeAsync(fd, `// Generated with options: ${randomOptions.join(" ")}\n\n`);
+  await fs.writeAsync(fd, `// Generated with options: ${emOptions.join(" ")}\n\n`);
   if (shouldInlineWasm) {
     const wasmBuffer = await fs.readFileAsync(wasmFile, "binary");
     let string = "";
