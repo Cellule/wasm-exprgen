@@ -1,4 +1,4 @@
-import {outputDir as defaultOutdir, toolsDirectory} from "./init";
+import {outputDir as defaultOutdir, buildDirectory, thirdParties} from "./init";
 import fs from "fs-extra";
 import path from "path";
 import {spawn} from "child_process";
@@ -85,13 +85,25 @@ async function compile({
   let shouldInlineWasm = inlineWasm;
   // Generate wasm version
   const jsFile = path.resolve(outdir, `${fileName}.js`);
+  const clangFlags = [
+    "-w", // disable all diagnostic
+  ];
+  const isCpp11 = sourceFile.endsWith(".cpp");
+  if (isCpp11) {
+    clangFlags.push(
+      "-std=c++11",
+      "-Wno-c++11-narrowing"
+    );
+  }
   await transpiler([
     sourceFile,
-    `-I${path.join(toolsDirectory, "csmith/inc")}`,
+    `-I${path.join(thirdParties.csmith, "runtime")}`,
+    `-I${path.join(buildDirectory.csmith, "runtime")}`,
     "-s", "WASM=1",
     "-s", `BINARYEN_METHOD='native-wasm${interpreted ? ",interpret-binary" : ""}'`,
     "-s", "BINARYEN_ASYNC_COMPILATION=0",
     "-g",
+    ...clangFlags,
     ...emOptions,
     "-o", jsFile
   ], {cwd: outdir, ...execOptions});
