@@ -19,7 +19,7 @@ export const buildDirectory = {
   llvm: path.join(toolsDirectory, "llvm")
 };
 export const binDirectory = {
-  csmith: buildDirectory.csmith,
+  csmith: path.join(buildDirectory.csmith, "src", "Release"),
   spec: buildDirectory.spec,
   llvm: path.join(buildDirectory.llvm, isWindows ? "Release/bin" : "bin")
 };

@@ -12,59 +12,28 @@ import {waitUntilDone} from "./utils";
 import generate from "./generate";
 
 async function buildCSmith() {
-  const {msbuild, make, m4} = await csmithDependencies();
-  const csmithBinDir = buildDirectory.csmith;
-  await fs.ensureDirAsync(csmithBinDir);
+  const {msbuild, cmake, m4} = await csmithDependencies();
+  const csmithBuildDir = buildDirectory.csmith;
+  await fs.ensureDirAsync(csmithBuildDir);
   console.log("Starting CSmith build");
-
   const csmithPath = thirdParties.csmith;
-  const incPath = path.join(csmithBinDir, "inc");
-  let output;
-  let binSrc;
+
+  await execFileAsync(cmake, [
+    csmithPath
+  ], {
+    cwd: csmithBuildDir,
+    env: {
+      path: `${path.dirname(m4)};${process.env.path}`
+    }
+  });
+
   if (msbuild) {
-    const vcproj = path.join(csmithPath, "src", "csmith.vcxproj");
+    const vcproj = path.join(csmithBuildDir, "csmith.sln");
     await execFileAsync(msbuild, [vcproj, "/p:Configuration=Release"]);
 
-    output = path.join(csmithBinDir, "csmith.exe");
-    binSrc = path.join(csmithPath, "src", "Release", "csmith.exe");
+    const output = path.join(binDirectory.csmith, "csmith.exe");
     console.log(`CSmith output: ${output}`);
-  } else {
-    const procConf = spawn(path.join(csmithPath, "configure"), [], {
-      cwd: csmithPath,
-      stdio: "inherit"
-    });
-    await waitUntilDone(procConf);
-    const procMake = spawn(make, [], {
-      cwd: csmithPath,
-      stdio: "inherit"
-    });
-    await waitUntilDone(procMake);
-    output = path.join(csmithBinDir, "csmith");
-    binSrc = path.join(csmithPath, "src", "csmith");
   }
-  const incSrcPath = path.join(csmithPath, "runtime");
-  await fs.emptyDirAsync(incPath);
-  await fs.copyAsync(incSrcPath, incPath);
-  await fs.copyAsync(
-    binSrc,
-    output,
-    {clobber: true}
-  );
-
-  if (msbuild) {
-    // Build m4 files
-    const m4Files = (await fs.readdirAsync(incPath)).filter(file => path.extname(file) === ".m4");
-    for (const m4File of m4Files) {
-      const filename = path.basename(m4File, ".m4");
-      const stream = fs.createWriteStream(path.join(incPath, `${filename}.h`));
-      await (new Promise(r => stream.on("open", r)));
-      const proc = spawn(m4, [path.join(incPath, m4File)], {
-        stdio: [stream, stream, stream]
-      });
-      await waitUntilDone(proc);
-    }
-  }
-  console.log(`CSmith output: ${output}`);
 }
 
 async function buildLLVM() {
