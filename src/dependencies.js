@@ -33,22 +33,29 @@ async function searchForMsBuild() {
 
   const getPaths = () => {
     const dev15Paths = ["15.0"].map(version => {
-      const possiblePaths = [
-        {root: path.resolve(process.env.ProgramFiles, "Microsoft Visual Studio", "2017"), rest: ["msbuild", version, "bin/x86"]},
-        {root: path.resolve(process.env["ProgramFiles(x86)"], "Microsoft Visual Studio", "2017"), rest: ["msbuild", version, "bin"]},
-        {root: path.resolve(process.env["ProgramFiles(x86)"], "Microsoft Visual Studio", "2017"), rest: ["msbuild", version, "bin/amd64"]},
+      const binFolders = ["bin", "bin/x86", "bin/amd64"];
+      const vsVersions = ["2017", "Preview"];
+      const roots = [
+        path.resolve(process.env.ProgramFiles, "Microsoft Visual Studio"),
+        path.resolve(process.env["ProgramFiles(x86)"], "Microsoft Visual Studio"),
       ];
-      return possiblePaths.reduce((allPaths, info) => {
-        try {
-          const content = fs.readdirSync(info.root);
-          for (const dir of content) {
-            allPaths.push(path.join(info.root, dir, ...info.rest));
+      const allPaths = [];
+      for (const root of roots) {
+        for (const vsVersion of vsVersions) {
+          const folder = path.join(root, vsVersion);
+          try {
+            const content = fs.readdirSync(folder);
+            for (const dir of content) {
+              for (const binFolder of binFolders) {
+                allPaths.push(path.join(folder, dir, "msbuild", version, binFolder));
+              }
+            }
+          } catch (e) {
+            // ignore
           }
-        } catch (e) {
-          // ignore
         }
-        return allPaths;
-      }, []).join(";");
+      }
+      return allPaths.join(";");
     }).join(";");
 
     const oldDevPaths = ["14.0", "12.0", "10.0"].map(version => [

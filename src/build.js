@@ -23,7 +23,7 @@ async function buildCSmith() {
   ], {
     cwd: csmithBuildDir,
     env: {
-      path: `${path.dirname(m4)};${process.env.path}`
+      path: `${path.dirname(msbuild)};${path.dirname(m4)};${process.env.path}`
     }
   });
 
@@ -63,7 +63,10 @@ async function buildLLVM() {
     "-DCLANG_INCLUDE_EXAMPLES=OFF",
     "-DCLANG_INCLUDE_TESTS=OFF",
   ], {
-    cwd: buildDir
+    cwd: buildDir,
+    env: {
+      path: `${path.dirname(msbuild)};${process.env.path}`
+    }
   });
 
   if (msbuild) {
@@ -113,7 +116,7 @@ async function buildSpecInterpreter() {
       cwd: interpreterPath
     });
     await waitUntilDone(proc);
-    await fs.copyAsync(path.join(interpreterPath, "wasm.exe"), path.join(buildDirectory.spec, "wasm.exe"));
+    await fs.copyAsync(path.join(interpreterPath, "main", "main.d.byte"), path.join(buildDirectory.spec, "wasm.exe"));
   } else {
     const proc = spawn(make, [], {
       cwd: interpreterPath

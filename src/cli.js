@@ -111,8 +111,8 @@ yargs
           describe: "Source file to regenerate"
         },
         emargs: {
-          array: true,
-          describe: "Extra arguments to pass to emcc"
+          string: true,
+          describe: "Space separated extra arguments to pass to emcc"
         }
       }),
     handler: (argv) => {
@@ -122,7 +122,7 @@ yargs
         outdir: argv.outdir,
         inlineWasm: argv.inline,
         execOptions: {},
-        emOptions: argv.emargs || []
+        emOptions: (argv.emargs || "").split(" ")
       };
       if (argv.silent) {
         args.execOptions.stdio = "ignore";
