@@ -1,8 +1,7 @@
 import {binDirectory, outputDir, thirdParties, isWindows} from "./init";
 import path from "path";
 import fs from "fs-extra";
-import {spawn} from "child_process";
-import {waitUntilDone} from "./utils";
+import spawn from "spawn-extra";
 import which from "which";
 
 async function fromPath(bin, opt = {}) {
@@ -97,13 +96,13 @@ export async function llvmDependencies() {
 async function validatePythonVersion(python) {
   if (python) {
     try {
-      const proc = spawn(python, ["--version"]);
-      let stdout = "";
-      proc.stdout.on("data", data => {stdout += data;});
-      proc.stderr.on("data", data => {stdout += data;});
-      await waitUntilDone(proc);
+      const proc = spawn(python, ["--version"], {
+        timeout: 30000,
+        mixStdOutErr: true
+      });
+      const info = await proc.wait();
       try {
-        const version = parseFloat(/python (\d+\.\d+)/ig.exec(stdout)[1]);
+        const version = parseFloat(/python (\d+\.\d+)/ig.exec(info.stdout)[1]);
         if (version >= 2.7 && version < 3) {
           return python;
         }
@@ -160,9 +159,11 @@ async function emscriptenDependenciesInternal() {
         HOME: outputDir,
         USERPROFILE: outputDir,
       },
+      timeout: 10 * 60 * 1000, // 10 minutes should be plenty to build a small csmith file
+      collectStdOut: false,
       ...opt
     });
-    return waitUntilDone(proc);
+    return proc.wait();
   };
   return {
     python,

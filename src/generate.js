@@ -1,9 +1,8 @@
 import {outputDir as defaultOutdir, buildDirectory, thirdParties} from "./init";
 import fs from "fs-extra";
 import path from "path";
-import {spawn} from "child_process";
 import {generateDependencies} from "./dependencies";
-import {waitUntilDone} from "./utils";
+import spawn from "spawn-extra";
 
 export const sourceTypes = {
   c: Symbol(),
@@ -43,9 +42,11 @@ export default async function generate({
   const csmithProc = spawn(csmith, ["-o", sourceFile, ...csmithArgs], {
     stdio: "inherit",
     cwd: outdir,
+    timeout: 5 * 60 * 1000,
+    collectStdOut: false,
     ...execOptions
   });
-  await waitUntilDone(csmithProc);
+  await csmithProc.wait();
   const randomOptions = getRandomEmscriptenOptions();
   return compile({
     ...args,
@@ -113,20 +114,26 @@ async function compile({
   // Make sure it is valid
   // Emscripten sometimes generates invalid wasm file, should investigate
   let isValid;
-  const wasmSpecOutput = {stdout: "", stderr: ""};
+  let wasmSpecOutput = null;
   if (validate && specInterpreter) {
     isValid = false;
     const specProc = spawn(specInterpreter, [wasmFile, "-d"], {
-      cwd: outdir
+      cwd: outdir,
+      timeout: 5 * 60 * 1000,
     });
+    wasmSpecOutput = specProc.getRunInfo();
     try {
-      await waitUntilDone(specProc, {getOutput: wasmSpecOutput});
+      await specProc.wait();
       isValid = true;
     } catch (e) {
-      shouldInlineWasm = true;
-      const match = /0x[0-9a-f]+:(.+)$/mi.exec(wasmSpecOutput.stderr);
-      const specErrorMessage = match && match[1] || wasmSpecOutput.stdout + wasmSpecOutput.stderr;
-      const newJsFile = `
+      if (wasmSpecOutput.timedout) {
+        // Ignore spec interpreter result if it timed out
+        console.warn("Spec interpreter timed out");
+      } else {
+        shouldInlineWasm = true;
+        const match = /0x[0-9a-f]+:(.+)$/mi.exec(wasmSpecOutput.stderr);
+        const specErrorMessage = match && match[1] || wasmSpecOutput.stdout + wasmSpecOutput.stderr;
+        const newJsFile = `
 // check environment for wasm regen
 var ENVIRONMENT_IS_NODE = typeof require !== "undefined";
 if (ENVIRONMENT_IS_NODE) {
@@ -139,7 +146,8 @@ if (WebAssembly.validate(Module["readBinary"]())) {
 }
 // {{POST_RUN_ADDITIONS}}
 `;
-      await fs.writeFileAsync(jsFile, newJsFile);
+        await fs.writeFileAsync(jsFile, newJsFile);
+      }
     }
   } else if (validate) {
     console.warn("WebAssembly spec interpreter is missing, unable to do validation");

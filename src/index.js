@@ -1,5 +1,6 @@
-import gen, {compileFromSource} from "./generate";
+import generate, {compileFromSource} from "./generate";
 
-export const generate = gen;
-export const regen  = compileFromSource;
-
+export {
+  generate,
+  compileFromSource as regen
+};
