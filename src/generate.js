@@ -2,7 +2,12 @@ import {outputDir as defaultOutdir, buildDirectory, thirdParties} from "./init";
 import fs from "fs-extra";
 import path from "path";
 import {generateDependencies} from "./dependencies";
-import spawn from "spawn-extra";
+import execa from "execa";
+import {
+  defaultTimeoutCsmith,
+  defaultTimeoutSpec,
+  defaultTimeoutTranspiler
+} from "./utils";
 
 export const sourceTypes = {
   c: Symbol(),
@@ -15,6 +20,7 @@ export default async function generate({
   fileName = "test",
   outdir = defaultOutdir,
   execOptions = {},
+  timeoutCsmith = defaultTimeoutCsmith,
   ...args
 } = {}) {
   const {csmith, wasm, runEmcc, runEmpp} = await generateDependencies();
@@ -39,14 +45,13 @@ export default async function generate({
       break;
     default: throw new Error("Unknown source type");
   }
-  const csmithProc = spawn(csmith, ["-o", sourceFile, ...csmithArgs], {
+  const csmithProc = execa(csmith, ["-o", sourceFile, ...csmithArgs], {
     stdio: "inherit",
     cwd: outdir,
-    timeout: 5 * 60 * 1000,
-    collectStdOut: false,
-    ...execOptions
+    ...execOptions,
+    timeout: timeoutCsmith,
   });
-  await csmithProc.wait();
+  await csmithProc;
   const randomOptions = getRandomEmscriptenOptions();
   return compile({
     ...args,
@@ -78,6 +83,8 @@ async function compile({
   outdir = defaultOutdir,
   inlineWasm = false,
   execOptions = {},
+  timeoutSpec = defaultTimeoutSpec,
+  timeoutTranspiler = defaultTimeoutTranspiler,
   emOptions = [],
   transpiler,
   specInterpreter
@@ -107,29 +114,28 @@ async function compile({
     ...clangFlags,
     ...emOptions,
     "-o", jsFile
-  ], {cwd: outdir, ...execOptions});
+  ], {cwd: outdir, ...execOptions, timeout: timeoutTranspiler});
   const wasmFile = path.resolve(outdir, `${fileName}.wasm`);
   const wastFile = path.resolve(outdir, `${fileName}.wast`);
 
   // Make sure it is valid
   // Emscripten sometimes generates invalid wasm file, should investigate
-  let isValid;
+  let isValid = true;
   let wasmSpecOutput = null;
   if (validate && specInterpreter) {
-    isValid = false;
-    const specProc = spawn(specInterpreter, [wasmFile, "-d"], {
-      cwd: outdir,
-      timeout: 5 * 60 * 1000,
-    });
-    wasmSpecOutput = specProc.getRunInfo();
     try {
-      await specProc.wait();
-      isValid = true;
+      wasmSpecOutput = await execa(specInterpreter, [wasmFile, "-d"], {
+        cwd: outdir,
+        ...execOptions,
+        timeout: timeoutSpec,
+      });
     } catch (e) {
-      if (wasmSpecOutput.timedout) {
+      if (e.timedOut || e.killed) {
         // Ignore spec interpreter result if it timed out
         console.warn("Spec interpreter timed out");
       } else {
+        wasmSpecOutput = {stdout: e.stdout, stderr: e.stderr};
+        isValid = false;
         shouldInlineWasm = true;
         const match = /0x[0-9a-f]+:(.+)$/mi.exec(wasmSpecOutput.stderr);
         const specErrorMessage = match && match[1] || wasmSpecOutput.stdout + wasmSpecOutput.stderr;

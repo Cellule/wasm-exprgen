@@ -1,4 +1,8 @@
 
+export const defaultTimeoutCsmith = 5 * 60 * 1000;
+export const defaultTimeoutSpec = 5 * 60 * 1000;
+export const defaultTimeoutTranspiler = 10 * 60 * 1000;
+
 export function waitUntilDone(proc, {getOutput} = {}) {
   return new Promise((resolve, reject) => {
     if (getOutput) {

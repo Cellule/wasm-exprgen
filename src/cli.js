@@ -2,6 +2,11 @@ import yargs from "yargs";
 import generate, {sourceTypes, compileFromSource} from "./generate";
 import {outputDir} from "./init";
 import build, {prepareEmscriptenConfig} from "./build";
+import {
+  defaultTimeoutCsmith,
+  defaultTimeoutSpec,
+  defaultTimeoutTranspiler
+} from "./utils";
 
 const commonGenOptions = {
   outdir: {
@@ -28,6 +33,16 @@ const commonGenOptions = {
     boolean: true,
     describe: "Silently run generating tools"
   },
+  "timeout-em": {
+    number: true,
+    describe: "Timeout for emscripten",
+    default: defaultTimeoutTranspiler
+  },
+  "timeout-spec": {
+    number: true,
+    describe: "Timeout for spec interpreter",
+    default: defaultTimeoutSpec
+  }
 };
 
 yargs
@@ -65,6 +80,11 @@ yargs
     builder: (_yargs) => _yargs
       .options({
         ...commonGenOptions,
+        "timeout-csmith": {
+          number: true,
+          describe: "Timeout for csmith",
+          default: defaultTimeoutCsmith
+        },
         attempts: {
           alias: "a",
           number: true,
@@ -91,6 +111,9 @@ yargs
         fileName: argv.fileName,
         outdir: argv.outdir,
         inlineWasm: argv.inline,
+        timeoutSpec: argv.timeoutSpec,
+        timeoutCsmith: argv.timeoutCsmith,
+        timeoutTranspiler: argv.timeoutEm,
         execOptions: {},
       };
       if (argv.silent) {
@@ -121,6 +144,8 @@ yargs
         sourceFile: argv.source,
         outdir: argv.outdir,
         inlineWasm: argv.inline,
+        timeoutSpec: argv.timeoutSpec,
+        timeoutTranspiler: argv.timeoutEm,
         execOptions: {},
         emOptions: (argv.emargs || "").split(" ")
       };

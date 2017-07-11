@@ -17,8 +17,8 @@
   "dependencies": {
     "babel-polyfill": "^6.20.0",
     "bluebird": "^3.4.6",
+    "execa": "^0.7.0",
     "fs-extra": "^1.0.0",
-    "spawn-extra": "git+https://github.com/Cellule/spawn-extra-js.git",
     "which": "^1.2.12",
     "yargs": "^6.5.0"
   },
