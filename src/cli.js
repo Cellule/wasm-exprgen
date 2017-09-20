@@ -119,7 +119,8 @@ yargs
       if (argv.silent) {
         args.execOptions.stdio = "ignore";
       }
-      doGenerate(generate, argv.attempts, args);
+      doGenerate(generate, argv.attempts, args)
+        .catch(() => process.exit(1));
     }
   })
   .command({
@@ -152,7 +153,8 @@ yargs
       if (argv.silent) {
         args.execOptions.stdio = "ignore";
       }
-      doGenerate(compileFromSource, 1, args);
+      doGenerate(compileFromSource, 1, args)
+        .catch(() => process.exit(1));
     }
   })
   .demand(1)
@@ -160,6 +162,7 @@ yargs
 
 async function doGenerate(genFn, maxAttempts, args) {
   let nAttempts = 0;
+  let lastError = null;
   while (maxAttempts === 0 || nAttempts < maxAttempts) {
     nAttempts++;
     try {
@@ -171,6 +174,8 @@ async function doGenerate(genFn, maxAttempts, args) {
     } catch (e) {
       console.log("Failed to generate test");
       console.error(e);
+      lastError = e;
     }
   }
+  throw lastError;
 }
