@@ -27,6 +27,7 @@
     "babel-plugin-transform-object-rest-spread": "^6.20.2",
     "babel-preset-latest": "^6.16.0",
     "eslint": "^3.3.1",
-    "eslint-config-cellule": "^4.2.0"
+    "eslint-config-cellule": "^4.2.0",
+    "klaw": "^2.1.0"
   }
 }

@@ -1,6 +1,7 @@
 import {buildDirectory, binDirectory, outputDir, thirdParties} from "./init";
 import path from "path";
 import fs from "fs-extra";
+import klaw from "klaw";
 import {
   csmithDependencies,
   llvmDependencies,
@@ -70,6 +71,22 @@ async function buildLLVM() {
   });
 
   if (msbuild) {
+    // Remove /nologo lines
+    await (new Promise((resolve, reject) =>
+      klaw(buildDir)
+        .on("data", item => {
+          if (path.extname(item.path) === ".vcxproj") {
+            const content = fs.readFileSync(item.path)
+              .toString()
+              .split("\n")
+              .filter(line => line.indexOf("nologo") === -1)
+              .join("\n");
+            fs.writeFileSync(item.path, content);
+          }
+        })
+        .on("end", resolve)
+        .on("error", reject)
+    ));
     console.log("Running msbuild");
     const solution = path.join(buildDir, "LLVM.sln");
     const proc = spawn(msbuild, [solution, "/p:Configuration=Release"], {
